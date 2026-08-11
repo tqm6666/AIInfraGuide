@@ -1,32 +1,30 @@
 ---
 title: "第9章：性能分析与 Benchmark"
-description: "建立完整的推理性能指标体系，掌握 vllm bench、GenAI-Perf 等压测工具和性能分析工具，制定性能回归门禁"
+description: "用可复现压测与分层分析证明推理优化有效：指标体系、压测、Profiler/Nsight、权威基准读法与回归门禁——强调反作弊，而非跑分营销"
 pubDate: 2026-04-16
 category: "inference-optimization"
 order: 38
-tags: ["性能分析", "Benchmark", "vLLM Bench", "GenAI-Perf", "性能回归"]
+tags: ["性能分析", "Benchmark", "可复现", "Goodput", "性能回归"]
 ---
 
 ## 本章简介
 
-优化效果需要量化验证，本章建立推理场景的完整性能评估体系，压测工具以 vLLM 自带的基准工具为主。
+前八章把「装得下、跑得快、双 SLO、可控输出」铺完了；本章回答更刺耳的问题：**你怎么证明变好了，而不是换了一种好看的数字？** 优化效果需要可复现的量化验证——压测以 vLLM 自带基准为主，叙事重心是**负载前提、反作弊与门禁**，而不是海报上的峰值 tokens/s。
 
-**推理指标体系**定义完整指标集：QPS、TTFT(P50/P95)、TPOT(P50/P95)、Throughput、显存峰值、GPU 利用率，分析指标间的关联与 trade-off，强调单一指标无法反映全貌。
+**推理指标体系**钉死 TTFT、TPOT/ITL、吞吐、Goodput 与利用率，并拆分位数陷阱：均值/P50 合格不能掩盖 P95 翻车。
 
-**压测工具**覆盖 vLLM 自带的 `vllm bench serve` / `vllm bench latency` / `vllm bench throughput`、GenAI-Perf（LLM 指标一站式输出）、Triton Perf Analyzer，以及自定义压测脚本的设计要点和可复现的 Benchmark 配置管理。
+**压测工具**覆盖负载画像、预热、并发阶梯，以及报告最小字段；`vllm bench` / GenAI-Perf 是尺子，配置四元组才是可复现的底线。
 
-**性能分析工具**在推理场景下的最佳实践：torch.profiler 算子级分析、Nsight Systems 全链路分析、Nsight Compute Kernel 级下钻。
+**性能分析工具**给出「何时升级」：指标 → torch.profiler → Nsight Systems → Nsight Compute，并判读 CPU vs GPU 瓶颈。
 
-**权威基准**介绍 MLPerf Inference（Datacenter）和 LLM Perf 评测趋势。
+**权威基准**讲清读榜三问与本机复现边界；榜单是坐标系，不是施工图。
 
-**性能回归门禁**制定规则（如 TPOT P95 退化 > 5% 则 Block Merge）、CI 自动化集成和退化定位方法（git bisect + Nsight 对比）。
+**性能回归门禁**用噪声标定阈值，显式权衡假阳性/假阴性，并用 bisect + Nsight 定位退化。
 
-**动手实验**：用 `vllm bench serve` 输出完整指标报告，模拟性能退化并用 Nsight Systems 定位。
+## 本章章节
 
-## 本章小节
-
-- **9.1 推理指标体系**：QPS、TTFT、TPOT、Throughput、显存与利用率的关联
-- **9.2 压测工具**：vllm bench、GenAI-Perf、可复现的压测配置
-- **9.3 性能分析工具**：torch.profiler、Nsight Systems/Compute
-- **9.4 权威基准**：MLPerf Inference 与评测趋势
-- **9.5 性能回归门禁**：门禁规则、CI 集成、退化定位
+- **9.1 推理指标体系**：TTFT / TPOT·ITL / Goodput / 利用率与分位数陷阱
+- **9.2 压测工具**：负载画像、预热、并发阶梯与报告最小字段
+- **9.3 性能分析工具**：Profiler / Nsight 何时用，CPU vs GPU 判读
+- **9.4 权威基准**：读榜注意事项与本机复现边界
+- **9.5 性能回归门禁**：阈值标定与假阳性 / 假阴性权衡
